@@ -3,17 +3,18 @@ import integralaprox as ia
 import ctypes
 import platform
 
+
 class IntegralApproximatorGUI:
     def __init__(self):
         self.make_dpi_aware()
-        self.layoutDefine()
+        self.define_layout()
         self.window = sg.Window("Integral Approximator",
                                 self.layout, element_justification='c',
                                 size=(900, 500))
-        self.eventLoop()
+        self.event_loop()
         self.window.close()
 
-    def layoutDefine(self):
+    def define_layout(self):
         input_info_layout = [
             [sg.Text("Expression")],
             [sg.Text("Lower bound")],
@@ -25,6 +26,12 @@ class IntegralApproximatorGUI:
             [sg.In(size=(5, 1), key="-LOWERBOUND-")],
             [sg.In(size=(5, 1), key="-HIGHERBOUND-")],
             [sg.In(size=(5, 1), key="-N-")],
+        ]
+        input_column_layout = [
+            [
+                sg.Column(input_info_layout),
+                sg.Column(input_field_layout)
+            ],
         ]
         result_info_layout = [
             [sg.Text("Calc type", font=(16))],
@@ -55,44 +62,60 @@ class IntegralApproximatorGUI:
             ]
         ]
         self.layout = [
-            [
-                sg.Column(input_info_layout),
-                sg.Column(input_field_layout)
-            ],
+            input_column_layout,
             [sg.Button("Calculate", key="-CALCULATE-",
                        enable_events=True, size=(20, 1))],
             [sg.Column(results_column_layout, key="-RESULTS-", visible=False)]
         ]
 
-    def resultsUpdate(self, results):
+    def update_results(self, results):
         for key, value in results.items():
             self.window[key].update(str(value))
 
-    def eventLoop(self):
+    def event_loop(self):
         while True:
             event, values = self.window.read()
-            # Calculate results when calculate button is pressed
+
             if event == "-CALCULATE-":
                 try:
-                    # Get values from input fields
-                    exp = values["-EXPRESSION-"]
-                    high = float(values["-HIGHERBOUND-"])
-                    low = float(values["-LOWERBOUND-"])
-                    n = int(values["-N-"])
-                    # Calculate results
-                    results = ia.IntegralApproximator(exp, low, high, n).calc_all()
-                    errors = ia.IntegralApproximator(exp, low, high, n).calc_error()
-                    # Update results fields
-                    self.resultsUpdate(results)
-                    self.resultsUpdate(errors)
-                    # Show results
-                    self.window["-RESULTS-"].update(visible=True)
+                    results, errors = self.calculate_results(values)
+                    self.update_results(results, errors)
+                    self.show_results()
                 except:
                     sg.Popup("Invalid input, please try again", title="Error")
 
             elif event == sg.WIN_CLOSED:
                 break
-            
+
+    def calculate_results(self, values):
+        exp = values["-EXPRESSION-"]
+        high = float(values["-HIGHERBOUND-"])
+        low = float(values["-LOWERBOUND-"])
+        n = int(values["-N-"])
+        results = ia.IntegralApproximator(
+            exp, low, high, n).calc_all()
+        errors = ia.IntegralApproximator(
+            exp, low, high, n).calc_error()
+        return results, errors
+
+    def update_results(self, results, errors):
+        for key, value in results.items():
+            if value is None:
+                value = "N/A"
+            else:
+                value = round(value, 6)
+            self.window[key].update(str(value))
+        for key, value in errors.items():
+            if value is None:
+                value = "N/A"
+            else:
+                value = round(value, 6)
+            self.window[key].update(str(value))
+
+    def show_results(self):
+        self.window["-RESULTS-"].update(visible=True)
+
     def make_dpi_aware(self):
+        # Fix DPI scaling issues on Windows 8 and above
         if int(platform.release()) >= 8:
             ctypes.windll.shcore.SetProcessDpiAwareness(True)
