@@ -89,8 +89,8 @@ class IntegralApproximatorGUI:
 
     def calculate_results(self, values):
         exp = values["-EXPRESSION-"]
-        high = float(values["-HIGHERBOUND-"])
-        low = float(values["-LOWERBOUND-"])
+        high = values["-HIGHERBOUND-"]
+        low = values["-LOWERBOUND-"]
         n = int(values["-N-"])
         results = ia.IntegralApproximator(
             exp, low, high, n).calc_all()
